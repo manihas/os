@@ -1,0 +1,61 @@
+trigger:
+- main
+
+stages:
+- stage: ContentFlow
+  displayName: "Content Flow Management"
+  jobs:
+  - job: StartAndMonitorContentFlow
+    displayName: "Start and Monitor Content Flow"
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+    - task: UsePythonVersion@0
+      inputs:
+        versionSpec: '3.x'
+      displayName: "Install Python"
+
+    - script: |
+        # Install jq
+        sudo apt-get update
+        sudo apt-get install -y jq
+      displayName: "Install jq"
+
+    - script: |
+        # Install Adobe I/O CLI
+        npm install -g @adobe/aio-cli
+      displayName: "Install Adobe I/O CLI"
+
+    - task: UseNode@1
+      inputs:
+        versionSpec: '14.x'
+      displayName: "Install Node.js"
+
+    - task: DownloadSecureFile@1
+      inputs:
+        secureFile: 'your_adobe_io_cli_config_file'
+      displayName: "Download Adobe I/O CLI Config"
+
+    - script: |
+        # Setup Adobe I/O CLI
+        aio plugins:install @adobe/aio-cli-plugin-cloudmanager
+        aio config:set ims.contexts.aio-cli-plugin-cloudmanager <(cat $(Agent.TempDirectory)/your_adobe_io_cli_config_file)
+      displayName: "Setup Adobe I/O CLI"
+
+    - script: |
+        chmod +x start_and_monitor_content_flow.sh
+        ./start_and_monitor_content_flow.sh $(PROGRAMID) $(CONTENTSETID) $(ENVIRONMENTID) $(DESTENVIRONMENTID) $(INCLUDEACL)
+      displayName: "Start and Monitor Content Flow"
+      env:
+        PROGRAMID: $(PROGRAMID)
+        CONTENTSETID: $(CONTENTSETID)
+        ENVIRONMENTID: $(ENVIRONMENTID)
+        DESTENVIRONMENTID: $(DESTENVIRONMENTID)
+        INCLUDEACL: $(INCLUDEACL)
+
+    - task: PublishPipelineArtifact@1
+      inputs:
+        targetPath: 'flow_info.json'
+        artifactName: 'FlowInfo'
+        publishLocation: 'Pipeline'
+      displayName: "Publish Flow Info Artifact"
