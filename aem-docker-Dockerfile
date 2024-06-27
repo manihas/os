@@ -1,0 +1,18 @@
+# author/Dockerfile
+FROM openjdk:8-jdk-alpine
+
+LABEL maintainer="your-email@example.com"
+
+ENV AEM_JAR=aem-author-quickstart.jar
+ENV AEM_PORT=4502
+ENV AEM_RUNMODE=author
+
+# Add AEM Jar to the container
+ADD ${AEM_JAR} /opt/aem/
+
+WORKDIR /opt/aem
+
+EXPOSE ${AEM_PORT}
+
+# Command to run AEM
+CMD ["java", "-XX:+UseG1GC", "-Xmx2048m", "-jar", "aem-author-quickstart.jar", "-nofork", "-port", "${AEM_PORT}", "-r", "${AEM_RUNMODE}"]
