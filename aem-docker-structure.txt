@@ -1,0 +1,11 @@
+aem-docker/
+├── author/
+│   ├── Dockerfile
+│   └── aem-author-quickstart.jar
+├── publisher/
+│   ├── Dockerfile
+│   └── aem-publish-quickstart.jar
+├── dispatcher/
+│   ├── Dockerfile
+│   └── dispatcher.any
+└── docker-compose.yml
