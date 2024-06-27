@@ -3,18 +3,21 @@ FROM httpd:2.4
 
 LABEL maintainer="your-email@example.com"
 
+# Create the conf.dispatcher.d directory
+RUN mkdir -p /etc/httpd/conf.dispatcher.d
+
 # Copy the dispatcher configuration
 COPY dispatcher.any /etc/httpd/conf.dispatcher.d/dispatcher.any
 
-# Install the Dispatcher module
+# Add the Dispatcher module
 ADD dispatcher-apache2.4-linux-x86_64.so /usr/local/apache2/modules/mod_dispatcher.so
 
 # Update httpd.conf to load the Dispatcher module and include its configuration
 RUN echo "\n\
 LoadModule dispatcher_module modules/mod_dispatcher.so\n\
 <IfModule disp_apache2.c>\n\
-  DispatcherConfig conf.dispatcher.d/dispatcher.any\n\
-  DispatcherLog logs/dispatcher.log\n\
+  DispatcherConfig /etc/httpd/conf.dispatcher.d/dispatcher.any\n\
+  DispatcherLog /usr/local/apache2/logs/dispatcher.log\n\
   DispatcherLogLevel 3\n\
   DispatcherDeclineRoot 0\n\
   DispatcherUseProcessedURL 0\n\
