@@ -1,0 +1,26 @@
+# docker-compose.yml
+version: '3.8'
+
+services:
+  author:
+    build: ./author
+    ports:
+      - "4502:4502"
+    volumes:
+      - ./author/crx-quickstart:/opt/aem/crx-quickstart
+
+  publisher:
+    build: ./publisher
+    ports:
+      - "4503:4503"
+    volumes:
+      - ./publisher/crx-quickstart:/opt/aem/crx-quickstart
+
+  dispatcher:
+    build: ./dispatcher
+    ports:
+      - "80:80"
+    depends_on:
+      - publisher
+    volumes:
+      - ./dispatcher/logs:/usr/local/apache2/logs
