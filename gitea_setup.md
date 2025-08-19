@@ -1,32 +1,37 @@
-Got it ✅
-I’ll format the entire step-by-step guide as a Markdown document, so you can drop it straight into a GitHub README or wiki. Everything is copy-paste ready.
+Ah, now I understand perfectly! You want everything in a single Markdown file, exactly like the first version I gave, with all steps, explanations, commands, and code blocks in one continuous Markdown, without breaking formats between steps. Everything should be consistent and copy-paste ready.
+
+Here’s the full Markdown file in one uniform format:
 
 ⸻
 
 
-# 🚀 Local AI PR Review Bot (Gitea + Ollama)
+# 🤖 Local AI PR Review Bot (GitHub Copilot–like, Offline)
 
-This guide shows you how to build a **GitHub Copilot–like PR review bot** that runs **100% locally**:
+This guide sets up a **local GitHub-like server with AI code reviews**.  
+It uses:
 
-- 🗂️ **Gitea** = local GitHub-like server  
-- 🤖 **Ollama** = local AI model runner (no cloud required)  
-- 🔍 **Optional**: Semgrep for static analysis  
-- 📝 **Webhook + script** = automatically review PRs and post comments
+- **Gitea** → Self-hosted GitHub alternative  
+- **Ollama** → Local AI model runner  
+- **Webhook Bot** → Automatically reviews Pull Requests and posts AI-generated comments  
+- **Optional Semgrep** → Static analysis  
 
----
-
-## 1. Requirements
-
-- Linux/macOS (Windows → use WSL2)
-- Docker + `docker compose`
-- `curl`, `jq`, `python3`
-- Optional: `semgrep`
+Everything runs **offline** on your laptop.
 
 ---
 
-## 2. Run Gitea with Docker Compose
+## Step 1: Requirements
 
-Create a folder and `docker-compose.yml`:
+- Linux/macOS (Windows → WSL2)  
+- Installed:
+  - `docker`, `docker compose`
+  - `curl`, `jq`, `python3`
+- (Optional) `semgrep` for static analysis
+
+---
+
+## Step 2: Run Gitea with Docker Compose
+
+Create a folder `~/gitea` and file `docker-compose.yml`:
 
 ```yaml
 version: "3.8"
@@ -57,24 +62,24 @@ services:
     volumes:
       - gitea_data:/data
     ports:
-      - "3000:3000"   # web UI
-      - "2222:22"     # ssh
+      - "3000:3000"   # Web UI
+      - "2222:22"     # SSH
 volumes:
   gitea_db:
   gitea_data:
 
-Run it:
+Start Gitea:
 
-mkdir ~/gitea && cd ~/gitea
+cd ~/gitea
 docker compose up -d
 
-Open http://localhost:3000 → complete setup → create an admin user.
+Open http://localhost:3000 → finish setup → create an admin user.
 
 ⸻
 
-3. Create a Repo & Push Local Code
+Step 3: Create Repository & Push Code
 
-In Gitea UI → New Repository → e.g. myuser/myrepo.
+In Gitea → New Repository → e.g. myuser/myrepo.
 
 On your machine:
 
@@ -85,13 +90,13 @@ git push gitea main
 
 ⸻
 
-4. Create a Gitea API Token
-	•	Go to Settings → Applications → Generate New Token
-	•	Copy the token → we’ll call it GITEA_TOKEN
+Step 4: Create Gitea API Token
+	1.	Go to Settings → Applications → Generate New Token
+	2.	Copy the token → call it GITEA_TOKEN
 
 ⸻
 
-5. Install Ollama + Model
+Step 5: Install Ollama & Model
 
 Install Ollama:
 
@@ -101,14 +106,14 @@ Pull a code-tuned model:
 
 ollama pull codellama:7b-instruct
 
-Check available models:
+Check installed models:
 
 ollama list
 
 
 ⸻
 
-6. (Optional) Install Semgrep
+Step 6: (Optional) Install Semgrep
 
 pip install --user semgrep
 # or
@@ -117,18 +122,12 @@ brew install semgrep
 
 ⸻
 
-7. Review Script
+Step 7: Review Script
 
-Save as ~/gitea-bot/review-pr.sh:
+Create ~/gitea-bot/review-pr.sh:
 
 #!/usr/bin/env bash
 set -euo pipefail
-
-# Usage: ./review-pr.sh <owner/repo> <pr_number>
-# Requires:
-#   GITEA_URL   (default: http://localhost:3000)
-#   GITEA_TOKEN
-#   MODEL       (default: codellama:7b-instruct)
 
 REPO="$1"
 PR="$2"
@@ -165,7 +164,7 @@ REVIEW=$(printf "%s\n\n--- DIFF START ---\n%s\n--- DIFF END ---\n" "$PROMPT" "$D
 
 echo "$REVIEW"
 
-# Post review as a PR comment
+# Post review as PR comment
 curl -s -X POST -H "Content-Type: application/json" \
   -H "Authorization: token $GITEA_TOKEN" \
   -d "{\"body\": $(jq -Rs . <<< "$REVIEW")}" \
@@ -178,9 +177,9 @@ chmod +x ~/gitea-bot/review-pr.sh
 
 ⸻
 
-8. Webhook Listener
+Step 8: Webhook Listener
 
-Save as ~/gitea-bot/webhook-server.py:
+Create ~/gitea-bot/webhook-server.py:
 
 from flask import Flask, request, abort
 import subprocess, os, hmac, hashlib
@@ -222,40 +221,41 @@ python3 ~/gitea-bot/webhook-server.py
 
 ⸻
 
-9. Configure Gitea Webhook
+Step 9: Configure Gitea Webhook
 
-Repo → Settings → Webhooks → Add Webhook:
+In your repo → Settings → Webhooks → Add Webhook:
 	•	URL: http://localhost:9000/webhook
-	•	Content type: JSON
+	•	Content type: application/json
 	•	Secret: supersecret
 	•	Trigger: Pull Request events
 
 ⸻
 
-10. Test It
-	1.	Create a branch → commit a change → push.
-	2.	Open a PR in Gitea.
-	3.	Webhook triggers → script runs → AI review appears as a PR comment.
+Step 10: Test It
+	1.	Create a new branch and commit a change.
+	2.	Push and open a Pull Request in Gitea.
+	3.	The webhook triggers → script runs → AI review appears as a PR comment.
 
 ⸻
 
-11. Improvements
-	•	Per-line inline comments (requires Gitea API v1.21+)
-	•	Combine Semgrep + AI (RUN_SEMGREP=1 ./review-pr.sh)
-	•	Block merges on blocker severity via branch protections
-	•	Use smaller models (codellama:7b-instruct is a good balance)
+Step 11: Improvements
+	•	Post inline comments per file/line (requires Gitea API v1.21+)
+	•	Merge Semgrep + AI for hybrid review
+	•	Block PRs with blocker severity using branch protections
+	•	Try different models (codellama:7b-instruct, qwen2.5-coder, deepseek-coder)
 
 ⸻
 
-✅ Summary
+✅ Done!
 
 You now have:
-	•	Local GitHub-like repo hosting (Gitea)
-	•	Local AI model (Ollama) reviewing PRs
-	•	Auto-posted review comments in pull requests
-
-All offline, private, and customizable 🎉
+	•	Local GitHub-like server (Gitea)
+	•	Local AI model (Ollama)
+	•	Automatic PR reviews with AI feedback
+	•	100% private and offline 🎉
 
 ---
 
-Would you like me to **add inline comment support** in that Markdown doc (so reviews appear directly on changed lines, not just as a single PR comment)?
+If you want, I can **upgrade Step 7 & 8** so reviews post **inline comments per changed line**, making it fully like GitHub Copilot PR review.  
+
+Do you want me to do that next?
